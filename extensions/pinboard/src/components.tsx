@@ -1,4 +1,4 @@
-import { List, ActionPanel, Action, Color, Icon, confirmAlert, Alert } from "@raycast/api";
+import { List, ActionPanel, Action, Color, Icon, confirmAlert, Alert, getPreferenceValues } from "@raycast/api";
 import { Bookmark } from "./types";
 
 export function EmptyView(props: { title?: string; description?: string; actions?: false | React.JSX.Element }) {
@@ -14,32 +14,102 @@ export function EmptyView(props: { title?: string; description?: string; actions
   );
 }
 
-export function BookmarkListItem(props: { bookmark: Bookmark; onDelete: (bookmark: Bookmark) => Promise<void> }) {
-  const { bookmark, onDelete } = props;
+function getDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace("www.", "");
+  } catch {
+    return "";
+  }
+}
+
+function getPinboardUsername(): string {
+  const { apiToken } = getPreferenceValues<{ apiToken: string }>();
+  return apiToken.split(":")[0] ?? "";
+}
+
+export function BookmarkListItem(props: {
+  bookmark: Bookmark;
+  onDelete: (bookmark: Bookmark) => Promise<void>;
+  showDetail: boolean;
+  onToggleDetail: () => void;
+}) {
+  const { bookmark, onDelete, showDetail, onToggleDetail } = props;
 
   const tags: List.Item.Accessory[] = [];
-  if (bookmark.tags?.length) {
+  if (!showDetail && bookmark.tags?.length) {
     bookmark.tags.split(" ").forEach((tag) => {
       tags.push({ tag: { value: tag, color: Color.Orange } });
     });
   }
 
+  const detail = showDetail ? (
+    <List.Item.Detail
+      markdown={buildDetailMarkdown(bookmark)}
+      metadata={
+        <List.Item.Detail.Metadata>
+          <List.Item.Detail.Metadata.Link title="URL" text={bookmark.url} target={bookmark.url} />
+          {bookmark.tags && (
+            <List.Item.Detail.Metadata.TagList title="Tags">
+              {bookmark.tags.split(" ").map((tag) => (
+                <List.Item.Detail.Metadata.TagList.Item key={tag} text={tag} color={Color.Orange} />
+              ))}
+            </List.Item.Detail.Metadata.TagList>
+          )}
+          {bookmark.readLater && <List.Item.Detail.Metadata.Label title="Read Later" icon={Icon.Book} />}
+          {bookmark.private && <List.Item.Detail.Metadata.Label title="Private" icon={Icon.Lock} />}
+        </List.Item.Detail.Metadata>
+      }
+    />
+  ) : undefined;
+
   return (
     <List.Item
       id={bookmark.id}
       title={bookmark.title}
+      subtitle={getDomain(bookmark.url)}
       icon="list-icon.png"
       accessories={tags}
-      actions={<Actions bookmark={bookmark} onDelete={onDelete} />}
+      detail={detail}
+      actions={<Actions bookmark={bookmark} onDelete={onDelete} onToggleDetail={onToggleDetail} />}
     />
   );
 }
 
-function Actions({ bookmark, onDelete }: { bookmark: Bookmark; onDelete: (bookmark: Bookmark) => Promise<void> }) {
+function buildDetailMarkdown(bookmark: Bookmark): string {
+  if (bookmark.description) {
+    return bookmark.description;
+  }
+  return "*No description*";
+}
+
+function Actions({
+  bookmark,
+  onDelete,
+  onToggleDetail,
+}: {
+  bookmark: Bookmark;
+  onDelete: (bookmark: Bookmark) => Promise<void>;
+  onToggleDetail: () => void;
+}) {
+  const username = getPinboardUsername();
+  const pinboardUrl = `https://pinboard.in/u:${username}/b:${bookmark.id}`;
+
   return (
     <ActionPanel>
       <Action.OpenInBrowser url={bookmark.url} />
       <Action.CopyToClipboard title="Copy URL" content={bookmark.url} />
+      <Action
+        title="Toggle Detail"
+        icon={Icon.Sidebar}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
+        onAction={onToggleDetail}
+      />
+      <Action.OpenInBrowser
+        title="Open on Pinboard"
+        url={pinboardUrl}
+        icon={Icon.Globe}
+        shortcut={{ modifiers: ["cmd"], key: "p" }}
+      />
       <Action
         title="Delete Bookmark"
         style={Action.Style.Destructive}
