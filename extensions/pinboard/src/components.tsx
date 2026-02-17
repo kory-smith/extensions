@@ -1,4 +1,4 @@
-import { List, ActionPanel, Action, Color, Icon, confirmAlert, Alert } from "@raycast/api";
+import { List, ActionPanel, Action, Color, Icon, confirmAlert, Alert, getPreferenceValues } from "@raycast/api";
 import { Bookmark } from "./types";
 
 export function EmptyView(props: { title?: string; description?: string; actions?: false | React.JSX.Element }) {
@@ -12,6 +12,14 @@ export function EmptyView(props: { title?: string; description?: string; actions
       actions={actions}
     />
   );
+}
+
+function pinboardSearchUrl(title: string): string {
+  const { apiToken } = getPreferenceValues<{ apiToken: string }>();
+  const username = apiToken.split(":")[0] ?? "";
+  // Strip characters that break Sphinx search (/, \, @, !, etc.)
+  const sanitized = title.replace(/[/\\@!^~<>{}[\]().:;|&"'`]/g, " ").replace(/\s+/g, " ").trim();
+  return `https://pinboard.in/search/u:${username}?query=${encodeURIComponent(sanitized)}`;
 }
 
 function getDomain(url: string): string {
@@ -91,6 +99,12 @@ function Actions({
     <ActionPanel>
       <Action.OpenInBrowser url={bookmark.url} />
       <Action.CopyToClipboard title="Copy URL" content={bookmark.url} />
+      <Action.OpenInBrowser
+        title="Search on Pinboard"
+        url={pinboardSearchUrl(bookmark.title)}
+        icon={Icon.MagnifyingGlass}
+        shortcut={{ modifiers: ["cmd", "opt"], key: "return" }}
+      />
       <Action
         title="Toggle Detail"
         icon={Icon.Sidebar}
