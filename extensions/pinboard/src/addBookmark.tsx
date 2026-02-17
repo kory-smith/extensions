@@ -1,6 +1,5 @@
-import { Form, ActionPanel, Action, showToast, Icon, getSelectedText, Toast, popToRoot } from "@raycast/api";
+import { Form, ActionPanel, Action, showToast, Icon, Toast, popToRoot } from "@raycast/api";
 import { FormValidation, useForm } from "@raycast/utils";
-import { useEffect } from "react";
 import { Bookmark, BookmarkFormValues } from "./types";
 import { addBookmark } from "./api";
 import { usePinboardTags } from "./hooks/usePinboardTags";
@@ -9,7 +8,7 @@ import { isValidURL } from "./utils";
 export default function Command() {
   const { tags, isLoading: tagsLoading } = usePinboardTags();
 
-  const { handleSubmit, itemProps, setValue, focus } = useForm<BookmarkFormValues>({
+  const { handleSubmit, itemProps } = useForm<BookmarkFormValues>({
     async onSubmit(values) {
       const toast = await showToast({ title: "Pinning bookmark...", style: Toast.Style.Animated });
 
@@ -49,18 +48,6 @@ export default function Command() {
     },
   });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const selectedText = await getSelectedText();
-        if (!isValidURL(selectedText)) return;
-        setValue("url", selectedText);
-        focus("title");
-      } catch {
-        // No text selected — that's fine
-      }
-    })();
-  }, []);
 
   return (
     <Form
