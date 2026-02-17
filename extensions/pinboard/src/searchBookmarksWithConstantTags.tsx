@@ -21,7 +21,7 @@ export default function Command() {
       isShowingDetail={showDetail}
       filtering={false}
       onSearchTextChange={setSearchText}
-      searchBarPlaceholder="Search bookmarks..."
+      searchBarPlaceholder="Search bookmarks… use #tag to filter by tag"
       searchBarAccessory={<ReadLaterDropdown onChange={setReadLater} />}
     >
       <EmptyView

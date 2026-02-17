@@ -99,10 +99,21 @@ export function usePinboardBookmarks(options?: UsePinboardBookmarksOptions): Use
     }
 
     const terms = searchText.toLowerCase().split(/\s+/).filter(Boolean);
+    const tagTerms = terms.filter((t) => t.startsWith("#")).map((t) => t.slice(1));
+    const textTerms = terms.filter((t) => !t.startsWith("#"));
 
     const filtered = preFiltered.filter((b) => {
-      const haystack = `${b.title} ${b.url} ${b.tags ?? ""} ${b.description ?? ""}`.toLowerCase();
-      return terms.every((term) => haystack.includes(term));
+      if (tagTerms.length > 0) {
+        const bookmarkTags = b.tags?.toLowerCase().split(" ") ?? [];
+        if (!tagTerms.every((tag) => bookmarkTags.some((bt) => bt.includes(tag)))) return false;
+      }
+
+      if (textTerms.length > 0) {
+        const haystack = `${b.title} ${b.url} ${b.tags ?? ""} ${b.description ?? ""}`.toLowerCase();
+        if (!textTerms.every((term) => haystack.includes(term))) return false;
+      }
+
+      return true;
     });
 
     return filtered.slice(0, MAX_RESULTS);
