@@ -1,7 +1,7 @@
 import { List, ActionPanel, Action, Color, Icon, confirmAlert, Alert } from "@raycast/api";
 import { Bookmark } from "./types";
 
-export function EmptyView(props: { title?: string; description?: string; actions?: false | JSX.Element }) {
+export function EmptyView(props: { title?: string; description?: string; actions?: false | React.JSX.Element }) {
   const { actions, title, description } = props;
 
   return (

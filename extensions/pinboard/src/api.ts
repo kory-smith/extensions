@@ -1,8 +1,6 @@
 import { getPreferenceValues } from "@raycast/api";
-import fetch from "node-fetch";
 import { useFetch } from "@raycast/utils";
 import { PinboardBookmark, Bookmark, BookmarksResponse } from "./types";
-import { extractDocumentTitle } from "./utils";
 
 const { apiToken, constantTags } = getPreferenceValues();
 const apiBasePath = "https://api.pinboard.in/v1";
@@ -23,7 +21,7 @@ export function useSearchConstantsBookmarks() {
           const items: Bookmark[] = data.map((post) => transformBookmark(post));
           const filtered = items.filter((tag) => {
             const tagBookmarks = tag.tags?.split(" ");
-            return tagBookmarks ? tagBookmarks.some((r) => constantTagsData.includes(r)) : false;
+            return tagBookmarks ? tagBookmarks.some((r: string) => constantTagsData.includes(r)) : false;
           });
 
           return { bookmarks: filtered };
@@ -104,5 +102,7 @@ export async function loadDocumentTitle(url: string): Promise<string> {
   if (!response.ok) {
     return Promise.reject(response.statusText);
   }
-  return extractDocumentTitle(await response.text());
+  const text = await response.text();
+  const title = text.match(/<title>(.*?)<\/title>/)?.[1] ?? "";
+  return title;
 }

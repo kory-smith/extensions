@@ -1,12 +1,6 @@
-import he from "he";
 import { Bookmark, BookmarksResponse } from "./types";
 import { Toast, showToast } from "@raycast/api";
 import { deleteBookmark } from "./api";
-
-export function extractDocumentTitle(document: string): string {
-  const title = document.match(/<title>(.*?)<\/title>/)?.[1] ?? "";
-  return he.decode(title);
-}
 
 export function isValidURL(url: string): boolean {
   try {
