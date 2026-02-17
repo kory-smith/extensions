@@ -14,20 +14,10 @@ export interface Bookmark {
   id: string;
   url: string;
   title: string;
+  description: string;
   tags?: string;
   private: boolean;
   readLater: boolean;
-}
-
-export interface BookmarksState {
-  bookmarks: Bookmark[];
-  isLoading: boolean;
-  title: string;
-}
-
-export enum SearchKind {
-  Constant,
-  All,
 }
 
 export type LastUpdated = {
@@ -41,7 +31,3 @@ export type BookmarkFormValues = {
   private: boolean;
   readLater: boolean;
 };
-
-export interface BookmarksResponse {
-  bookmarks: Bookmark[];
-}

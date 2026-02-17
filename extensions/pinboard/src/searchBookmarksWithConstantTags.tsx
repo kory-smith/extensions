@@ -1,27 +1,22 @@
-import {
-  Action,
-  ActionPanel,
-  Icon,
-  List,
-  getPreferenceValues,
-  openExtensionPreferences,
-  popToRoot,
-} from "@raycast/api";
-import { useSearchConstantsBookmarks } from "./api";
+import { Action, ActionPanel, Icon, List, getPreferenceValues, openExtensionPreferences, popToRoot } from "@raycast/api";
+import { usePinboardBookmarks } from "./hooks/usePinboardBookmarks";
 import { BookmarkListItem, EmptyView } from "./components";
-import { Bookmark } from "./types";
-import { deleteItem } from "./utils";
 
 export default function Command() {
-  const { isLoading, data, mutate } = useSearchConstantsBookmarks();
-  const { constantTags } = getPreferenceValues();
+  const { constantTags } = getPreferenceValues<{ constantTags?: string }>();
+  const tagList = constantTags?.split(" ").filter(Boolean) ?? [];
 
-  async function deleteBookmark(bookmark: Bookmark) {
-    await deleteItem({ bookmark, mutate });
-  }
+  const { bookmarks, isLoading, setSearchText, removeBookmark } = usePinboardBookmarks({
+    constantTags: tagList.length > 0 ? tagList : undefined,
+  });
 
   return (
-    <List isLoading={isLoading} searchBarPlaceholder="Search by name...">
+    <List
+      isLoading={isLoading}
+      filtering={false}
+      onSearchTextChange={setSearchText}
+      searchBarPlaceholder="Search bookmarks..."
+    >
       <EmptyView
         title={!constantTags ? "No Constant Tags Added" : undefined}
         description={!constantTags ? "Press enter to add constant tags" : undefined}
@@ -40,10 +35,9 @@ export default function Command() {
           )
         }
       />
-      {data?.bookmarks &&
-        data.bookmarks.map((bookmark) => (
-          <BookmarkListItem key={bookmark.id} bookmark={bookmark} onDelete={deleteBookmark} />
-        ))}
+      {bookmarks.map((bookmark) => (
+        <BookmarkListItem key={bookmark.id} bookmark={bookmark} onDelete={removeBookmark} />
+      ))}
     </List>
   );
 }

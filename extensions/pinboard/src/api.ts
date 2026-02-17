@@ -1,89 +1,58 @@
 import { getPreferenceValues } from "@raycast/api";
-import { useFetch } from "@raycast/utils";
-import { PinboardBookmark, Bookmark, BookmarksResponse } from "./types";
+import { PinboardBookmark, Bookmark, LastUpdated } from "./types";
 
-const { apiToken, constantTags } = getPreferenceValues();
+const { apiToken } = getPreferenceValues<{ apiToken: string }>();
 const apiBasePath = "https://api.pinboard.in/v1";
-const allPostsEndpoint = `${apiBasePath}/posts/all`;
-const params = new URLSearchParams({ auth_token: apiToken, format: "json" });
 
-export function useSearchConstantsBookmarks() {
-  return useFetch<BookmarksResponse>(`${allPostsEndpoint}?${params.toString()}`, {
-    async parseResponse(response) {
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-
-      const data = (await response.json()) as PinboardBookmark[];
-      if (data !== undefined) {
-        const constantTagsData = constantTags?.split(" ");
-        if (constantTags.length) {
-          const items: Bookmark[] = data.map((post) => transformBookmark(post));
-          const filtered = items.filter((tag) => {
-            const tagBookmarks = tag.tags?.split(" ");
-            return tagBookmarks ? tagBookmarks.some((r: string) => constantTagsData.includes(r)) : false;
-          });
-
-          return { bookmarks: filtered };
-        }
-      }
-      return { bookmarks: [] };
-    },
-  });
-}
-
-export function useSearchBookmarks() {
-  return useFetch<BookmarksResponse>(`${allPostsEndpoint}?${params.toString()}`, {
-    async parseResponse(response) {
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-
-      const data = (await response.json()) as PinboardBookmark[];
-      if (data !== undefined) {
-        const items = data.map((post) => transformBookmark(post)) as Bookmark[];
-
-        return { bookmarks: items };
-      }
-      return { bookmarks: [] };
-    },
-  });
+function buildUrl(path: string, extra?: Record<string, string>): string {
+  const params = new URLSearchParams({ auth_token: apiToken, format: "json", ...extra });
+  return `${apiBasePath}${path}?${params.toString()}`;
 }
 
 export function transformBookmark(post: PinboardBookmark): Bookmark {
   return {
-    id: post.hash as string,
-    url: post.href as string,
-    title: post.description as string,
-    tags: post.tags as string,
-    private: (post.shared as string) === "no",
-    readLater: (post.toread as string) === "yes",
+    id: post.hash,
+    url: post.href,
+    title: post.description,
+    description: post.extended,
+    tags: post.tags,
+    private: post.shared === "no",
+    readLater: post.toread === "yes",
   };
 }
 
-export async function deleteBookmark(bookmark: Bookmark) {
-  const params = new URLSearchParams();
-  params.append("auth_token", apiToken);
-  params.append("url", bookmark.url);
+export async function fetchAllBookmarks(): Promise<Bookmark[]> {
+  const response = await fetch(buildUrl("/posts/all"));
+  if (!response.ok) throw new Error(response.statusText);
 
-  return await fetch(apiBasePath + "/posts/delete?" + params.toString(), {
-    method: "post",
-  });
+  const data = (await response.json()) as PinboardBookmark[];
+  return data.map(transformBookmark);
+}
+
+export async function fetchLastUpdated(): Promise<string> {
+  const response = await fetch(buildUrl("/posts/update"));
+  if (!response.ok) throw new Error(response.statusText);
+
+  const data = (await response.json()) as LastUpdated;
+  return data.update_time;
+}
+
+export async function deleteBookmark(bookmark: Bookmark): Promise<void> {
+  const response = await fetch(buildUrl("/posts/delete", { url: bookmark.url }), { method: "post" });
+  if (!response.ok) throw new Error(response.statusText);
 }
 
 export async function addBookmark(bookmark: Bookmark): Promise<unknown> {
-  const params = new URLSearchParams();
-  params.append("url", bookmark.url);
-  params.append("description", bookmark.title ?? "New Bookmark");
-  params.append("tags", bookmark.tags ?? "");
-  params.append("shared", bookmark.private ? "no" : "yes");
-  params.append("toread", bookmark.readLater ? "yes" : "no");
-  params.append("format", "json");
-  params.append("auth_token", apiToken);
-
-  const response = await fetch(apiBasePath + "/posts/add?" + params.toString(), {
-    method: "post",
-  });
+  const response = await fetch(
+    buildUrl("/posts/add", {
+      url: bookmark.url,
+      description: bookmark.title ?? "New Bookmark",
+      tags: bookmark.tags ?? "",
+      shared: bookmark.private ? "no" : "yes",
+      toread: bookmark.readLater ? "yes" : "no",
+    }),
+    { method: "post" },
+  );
 
   if (!response.ok) {
     return Promise.reject(response.statusText);
@@ -95,14 +64,4 @@ export async function addBookmark(bookmark: Bookmark): Promise<unknown> {
   }
 
   return result;
-}
-
-export async function loadDocumentTitle(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    return Promise.reject(response.statusText);
-  }
-  const text = await response.text();
-  const title = text.match(/<title>(.*?)<\/title>/)?.[1] ?? "";
-  return title;
 }

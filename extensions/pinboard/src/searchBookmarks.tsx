@@ -1,23 +1,21 @@
 import { List } from "@raycast/api";
-import { useSearchBookmarks } from "./api";
+import { usePinboardBookmarks } from "./hooks/usePinboardBookmarks";
 import { BookmarkListItem, EmptyView } from "./components";
-import { Bookmark } from "./types";
-import { deleteItem } from "./utils";
 
 export default function Command() {
-  const { data, isLoading, mutate } = useSearchBookmarks();
-
-  async function deleteBookmark(bookmark: Bookmark) {
-    await deleteItem({ bookmark, mutate });
-  }
+  const { bookmarks, isLoading, setSearchText, removeBookmark } = usePinboardBookmarks();
 
   return (
-    <List isLoading={isLoading} searchBarPlaceholder="Search by name or #tag...">
+    <List
+      isLoading={isLoading}
+      filtering={false}
+      onSearchTextChange={setSearchText}
+      searchBarPlaceholder="Search bookmarks..."
+    >
       <EmptyView />
-      {data?.bookmarks &&
-        data.bookmarks.map((bookmark) => (
-          <BookmarkListItem key={bookmark.id} bookmark={bookmark} onDelete={deleteBookmark} />
-        ))}
+      {bookmarks.map((bookmark) => (
+        <BookmarkListItem key={bookmark.id} bookmark={bookmark} onDelete={removeBookmark} />
+      ))}
     </List>
   );
 }

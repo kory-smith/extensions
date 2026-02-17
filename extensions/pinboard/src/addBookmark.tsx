@@ -2,7 +2,7 @@ import { Form, ActionPanel, Action, showToast, Icon, getSelectedText, Toast, pop
 import { FormValidation, useForm } from "@raycast/utils";
 import { useEffect } from "react";
 import { Bookmark, BookmarkFormValues } from "./types";
-import { addBookmark, loadDocumentTitle } from "./api";
+import { addBookmark } from "./api";
 import { isValidURL } from "./utils";
 
 export default function Command() {
@@ -11,7 +11,7 @@ export default function Command() {
       const toast = await showToast({ title: "Pinning bookmark...", style: Toast.Style.Animated });
 
       try {
-        await addBookmark(values as Bookmark);
+        await addBookmark(values as unknown as Bookmark);
         toast.style = Toast.Style.Success;
         toast.title = "Successfully added bookmark";
         popToRoot();
@@ -39,26 +39,11 @@ export default function Command() {
     (async () => {
       try {
         const selectedText = await getSelectedText();
-        console.log("selectedText", selectedText);
-        if (!isValidURL(selectedText)) {
-          console.log(selectedText, "is not a valid URL");
-          return;
-        }
+        if (!isValidURL(selectedText)) return;
         setValue("url", selectedText);
-        try {
-          const documentTitle = await loadDocumentTitle(selectedText);
-          if (documentTitle) {
-            setValue("title", documentTitle);
-            focus("tags");
-          } else {
-            focus("title");
-          }
-        } catch (error) {
-          console.error("Could not load document title", error);
-          focus("title");
-        }
-      } catch (error) {
-        console.error("Could not get selected text", error);
+        focus("title");
+      } catch {
+        // No text selected — that's fine
       }
     })();
   }, []);
@@ -79,7 +64,7 @@ export default function Command() {
       />
       <Form.TextField title="Title" placeholder="Enter title" {...itemProps.title} />
       <Form.Separator />
-      <Form.TextField title="Tags" placeholder="Enter tags (comma separated)" {...itemProps.tags} />
+      <Form.TextField title="Tags" placeholder="Enter tags (space separated)" {...itemProps.tags} />
       <Form.Checkbox title="" label="Private" storeValue {...itemProps.private} />
       <Form.Checkbox title="" label="Read Later" storeValue {...itemProps.readLater} />
     </Form>
