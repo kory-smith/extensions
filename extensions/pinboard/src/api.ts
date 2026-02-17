@@ -1,5 +1,5 @@
 import { getPreferenceValues } from "@raycast/api";
-import { PinboardBookmark, Bookmark, LastUpdated } from "./types";
+import { PinboardBookmark, Bookmark, LastUpdated, Tag } from "./types";
 
 const { apiToken } = getPreferenceValues<{ apiToken: string }>();
 const apiBasePath = "https://api.pinboard.in/v1";
@@ -64,4 +64,14 @@ export async function addBookmark(bookmark: Bookmark): Promise<unknown> {
   }
 
   return result;
+}
+
+export async function fetchTags(): Promise<Tag[]> {
+  const response = await fetch(buildUrl("/tags/get"));
+  if (!response.ok) throw new Error(response.statusText);
+
+  const data = (await response.json()) as Record<string, string>;
+  return Object.entries(data)
+    .map(([name, count]) => ({ name, count: parseInt(count, 10) }))
+    .sort((a, b) => b.count - a.count);
 }

@@ -20,6 +20,11 @@ export interface Bookmark {
   readLater: boolean;
 }
 
+export interface Tag {
+  name: string;
+  count: number;
+}
+
 export type LastUpdated = {
   update_time: string;
 };
@@ -27,7 +32,7 @@ export type LastUpdated = {
 export type BookmarkFormValues = {
   url: string;
   title: string;
-  tags: string;
+  tags: string[];
   private: boolean;
   readLater: boolean;
 };

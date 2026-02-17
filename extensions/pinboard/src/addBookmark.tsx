@@ -3,15 +3,27 @@ import { FormValidation, useForm } from "@raycast/utils";
 import { useEffect } from "react";
 import { Bookmark, BookmarkFormValues } from "./types";
 import { addBookmark } from "./api";
+import { usePinboardTags } from "./hooks/usePinboardTags";
 import { isValidURL } from "./utils";
 
 export default function Command() {
+  const { tags, isLoading: tagsLoading } = usePinboardTags();
+
   const { handleSubmit, itemProps, setValue, focus } = useForm<BookmarkFormValues>({
     async onSubmit(values) {
       const toast = await showToast({ title: "Pinning bookmark...", style: Toast.Style.Animated });
 
       try {
-        await addBookmark(values as unknown as Bookmark);
+        const bookmark: Bookmark = {
+          id: "",
+          url: values.url,
+          title: values.title,
+          description: "",
+          tags: values.tags.join(" "),
+          private: values.private,
+          readLater: values.readLater,
+        };
+        await addBookmark(bookmark);
         toast.style = Toast.Style.Success;
         toast.title = "Successfully added bookmark";
         popToRoot();
@@ -32,7 +44,9 @@ export default function Command() {
       },
       title: FormValidation.Required,
     },
-    initialValues: {},
+    initialValues: {
+      tags: [],
+    },
   });
 
   useEffect(() => {
@@ -50,6 +64,7 @@ export default function Command() {
 
   return (
     <Form
+      isLoading={tagsLoading}
       actions={
         <ActionPanel>
           <Action.SubmitForm title="Add Bookmark" icon={{ source: Icon.Plus }} onSubmit={handleSubmit} />
@@ -64,7 +79,11 @@ export default function Command() {
       />
       <Form.TextField title="Title" placeholder="Enter title" {...itemProps.title} />
       <Form.Separator />
-      <Form.TextField title="Tags" placeholder="Enter tags (space separated)" {...itemProps.tags} />
+      <Form.TagPicker title="Tags" placeholder="Select tags..." {...itemProps.tags}>
+        {tags.map((tag) => (
+          <Form.TagPicker.Item key={tag.name} value={tag.name} title={`${tag.name} (${tag.count})`} />
+        ))}
+      </Form.TagPicker>
       <Form.Checkbox title="" label="Private" storeValue {...itemProps.private} />
       <Form.Checkbox title="" label="Read Later" storeValue {...itemProps.readLater} />
     </Form>
