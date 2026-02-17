@@ -1,4 +1,4 @@
-import { List, ActionPanel, Action, Color, Icon, confirmAlert, Alert, getPreferenceValues } from "@raycast/api";
+import { List, ActionPanel, Action, Color, Icon, confirmAlert, Alert } from "@raycast/api";
 import { Bookmark } from "./types";
 
 export function EmptyView(props: { title?: string; description?: string; actions?: false | React.JSX.Element }) {
@@ -22,10 +22,6 @@ function getDomain(url: string): string {
   }
 }
 
-function getPinboardUsername(): string {
-  const { apiToken } = getPreferenceValues<{ apiToken: string }>();
-  return apiToken.split(":")[0] ?? "";
-}
 
 export function BookmarkListItem(props: {
   bookmark: Bookmark;
@@ -91,9 +87,6 @@ function Actions({
   onDelete: (bookmark: Bookmark) => Promise<void>;
   onToggleDetail: () => void;
 }) {
-  const username = getPinboardUsername();
-  const pinboardUrl = `https://pinboard.in/u:${username}/b:${bookmark.id}`;
-
   return (
     <ActionPanel>
       <Action.OpenInBrowser url={bookmark.url} />
@@ -101,14 +94,8 @@ function Actions({
       <Action
         title="Toggle Detail"
         icon={Icon.Sidebar}
-        shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
+        shortcut={{ modifiers: ["cmd", "shift"], key: "return" }}
         onAction={onToggleDetail}
-      />
-      <Action.OpenInBrowser
-        title="Open on Pinboard"
-        url={pinboardUrl}
-        icon={Icon.Globe}
-        shortcut={{ modifiers: ["cmd"], key: "p" }}
       />
       <Action
         title="Delete Bookmark"
