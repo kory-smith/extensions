@@ -39,11 +39,19 @@ export function BookmarkListItem(props: {
 }) {
   const { bookmark, onDelete, showDetail, onToggleDetail } = props;
 
-  const tags: List.Item.Accessory[] = [];
-  if (!showDetail && bookmark.tags?.length) {
-    bookmark.tags.split(" ").forEach((tag) => {
-      tags.push({ tag: { value: tag, color: Color.Orange } });
-    });
+  const accessories: List.Item.Accessory[] = [];
+  if (!showDetail) {
+    if (bookmark.readLater) {
+      accessories.push({ icon: { source: Icon.Book, tintColor: "#c5653f" }, tooltip: "Read Later" });
+    }
+    if (bookmark.private) {
+      accessories.push({ icon: { source: Icon.Lock, tintColor: Color.SecondaryText }, tooltip: "Private" });
+    }
+    if (bookmark.tags?.length) {
+      bookmark.tags.split(" ").forEach((tag) => {
+        accessories.push({ tag: { value: tag, color: Color.Orange } });
+      });
+    }
   }
 
   const detail = showDetail ? (
@@ -72,7 +80,7 @@ export function BookmarkListItem(props: {
       title={bookmark.title}
       subtitle={getDomain(bookmark.url)}
       icon="list-icon.png"
-      accessories={tags}
+      accessories={accessories}
       detail={detail}
       actions={<Actions bookmark={bookmark} onDelete={onDelete} onToggleDetail={onToggleDetail} />}
     />
